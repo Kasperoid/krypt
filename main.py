@@ -1,5 +1,7 @@
 import datetime
+import hashlib
 
+# Формирование параметров схемы цифровой подписи
 def add_points(P1, P2, p, a):
     """
     Сложение двух точек эллиптической кривой
@@ -91,8 +93,6 @@ PARAMETRS_OBJ = {
     }
 }
 
-# Формирование параметров схемы цифровой подписи
-
 p = {
     "16": PARAMETRS_OBJ["gost-3410-12-512-paramSetA"]["p"],
     "10": int(PARAMETRS_OBJ["gost-3410-12-512-paramSetA"]["p"], 16)
@@ -156,3 +156,160 @@ xq["10"], yq["10"] = scalar_multiply(d["10"], [xp["10"], yp["10"]], p["10"], a["
 xq["16"] = hex(xq["10"])
 yq["16"] = hex(yq["10"])
 
+############################################################################################
+# Процесс формирования цифровой подписи
+# Исходные данные d и message
+
+xc = {
+    "16": 0,
+    "10": 0,
+}
+
+yc = {
+    "16": 0,
+    "10": 0,
+}
+
+e = {
+    "16": 0,
+    "10": 0,
+}
+
+k = {
+    "16": 0,
+    "10": 0,
+}
+
+r = {
+    "16": 0,
+    "10": 0,
+}
+
+s = {
+    "16": 0,
+    "10": 0,
+}
+
+message = 'some test message'
+
+h = hashlib.sha256(message.encode()).hexdigest()
+
+alpha = int(h, 16)
+
+if (alpha % q["10"] == 0):
+    e["10"] = 1
+    e["16"] = hex(1)
+else:
+    e["10"] = alpha % q["10"]
+    e["16"] = hex(alpha % q["10"])
+
+while True:
+    current_time = str(datetime.datetime.now())
+    result = hash(current_time) % q["10"]
+    if (result > 0 and result < q["10"]):
+        k["10"] = result
+        k["16"] = hex(result)
+
+        xc["10"], yc["10"] = scalar_multiply(k["10"], [xp["10"], yp["10"]], p["10"], a["10"])
+        xc["16"] = hex(xc["10"])
+        yc["16"] = hex(yc["10"])
+
+        r["10"] = xc["10"] % q["10"]
+        r["16"] = hex(xc["10"] % q["10"])
+
+        if r["10"] != 0:
+
+            s["10"] = (r["10"] * d["10"] + k['10'] * e["10"]) % q["10"]
+            s["16"] = hex((r["10"] * d["10"] + k['10'] * e["10"]) % q["10"])
+            if s["10"] != 0:
+                break
+
+####### Проверка цифровой подписи
+# На вход message, (r, s), (xc, yc)
+
+def mod_inverse(e, n): # Нахождение значения из разряда e^-1
+    """
+        e: значение, для которого ищется обратное
+        n: модуль
+    """
+    def extended_gcd(a, b):
+        if a == 0:
+            return b, 0, 1
+        else:
+            gcd, x, y = extended_gcd(b % a, a)
+            return gcd, y - (b // a) * x, x
+
+    # Проверяем, что e и n взаимно просты
+    gcd, x, _ = extended_gcd(e, n)
+
+    if gcd != 1:
+        raise ValueError("Мультипликативно обратное значение не существует")
+
+    # Приводим результат к положительному значению по модулю n
+    return x % n
+
+e_prov = {
+    "10": 0,
+    "16": 0
+}
+
+v = {
+    "10": 0,
+    "16": 0,
+}
+
+z1 = {
+    "10": 0,
+    "16": 0,
+}
+
+z2 = {
+    "10": 0,
+    "16": 0,
+}
+
+xc_prov = {
+    "10": 0,
+    "16": 0,
+}
+
+yc_prov = {
+    "10": 0,
+    "16": 0,
+}
+
+R = {
+    "10": 0,
+    "16": 0,
+}
+
+h_prov = hashlib.sha256(message.encode()).hexdigest()
+
+alpha_prov = int(h_prov, 16)
+
+if (alpha_prov % q["10"] == 0):
+    e_prov["10"] = 1
+    e_prov["16"] = hex(1)
+else:
+    e_prov["10"] = alpha_prov % q["10"]
+    e_prov["16"] = hex(alpha_prov % q["10"])
+
+v["10"] = mod_inverse(e_prov["10"], q["10"]) % q["10"]
+v["16"] = hex(v["10"])
+
+z1["10"] = (s["10"] * v["10"]) % q["10"]
+z1["16"] = hex(z1["10"])
+
+z2["10"] = (-r["10"] * v["10"]) % q["10"]
+z2["16"] = hex(z2["10"])
+
+xc_prov["10"], yc_prov["10"] = add_points(scalar_multiply(z1["10"], [xp["10"], yp["10"]], p["10"], a["10"]), scalar_multiply(z2["10"], [xq["10"], yq["10"]], p["10"], a["10"]), p["10"], a["10"])
+xc_prov["16"] = hex(xc_prov["10"])
+yc_prov["16"] = hex(yc_prov["10"])
+
+R["10"] = xc_prov["10"] % q["10"]
+R["16"] = hex(R["10"])
+
+print(R["10"])
+print(r["10"])
+print(R["10"] == r["10"])
