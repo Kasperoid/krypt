@@ -1,5 +1,6 @@
 import datetime
 import ElipticFuncs
+import genPrime
 # Формирование параметров схемы цифровой подписи
 
 def keygen():
@@ -13,77 +14,50 @@ def keygen():
             "x": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003",
             "y": "7503CFE87A836AE3A61B8816E25450E6CE5E1C93ACF1ABC1778064FDCBEFA921DF1626BE4FD036E93D75E6A50E3A41E98028FE5FC235F5B889A589CB5215F2A4",
         },
-        "gost-3410-12-512-paramSetВ": {
-            "p": "8000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006F",
-            "a": "8000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006C",
-            "b": "687D1B459DC841457E3E06CF6F5E2517B97C7D614AF138BCBF85DC806C4B289F3E965D2DB1416D217F8B276FAD1AB69C50F78BEE1FA3106EFB8CCBC7C5140116",
-            "q": "800000000000000000000000000000000000000000000000000000000000000149A1EC142565A545ACFDB77BD9D40CFA8B996712101BEA0EC6346C54374F25BD",
-            "x": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002",
-            "y": "1A8F7EDA389B094C2C071E3647A8940F3C123B697578C213BE6DD9E6C8EC7335DCB228FD1EDF4A39152CBCAAF8C0398828041055F94CEEEC7E21340780FE41BD",
-        }
     }
 
-    p = {
-        "16": PARAMETRS_OBJ["gost-3410-12-512-paramSetA"]["p"],
-        "10": int(PARAMETRS_OBJ["gost-3410-12-512-paramSetA"]["p"], 16)
-    }
+    p = int(PARAMETRS_OBJ["gost-3410-12-512-paramSetA"]["p"], 16)
 
-    a = {
-        "16": PARAMETRS_OBJ["gost-3410-12-512-paramSetA"]["a"],
-        "10": int(PARAMETRS_OBJ["gost-3410-12-512-paramSetA"]["a"], 16)
-    }
+    a = int(PARAMETRS_OBJ["gost-3410-12-512-paramSetA"]["a"], 16)
 
-    b = {
-        "16": PARAMETRS_OBJ["gost-3410-12-512-paramSetA"]["b"],
-        "10": int(PARAMETRS_OBJ["gost-3410-12-512-paramSetA"]["b"], 16)
-    }
+    b = int(PARAMETRS_OBJ["gost-3410-12-512-paramSetA"]["b"], 16)
 
-    q = {
-        "16": PARAMETRS_OBJ["gost-3410-12-512-paramSetA"]["q"],
-        "10": int(PARAMETRS_OBJ["gost-3410-12-512-paramSetA"]["q"], 16)
-    }
+    q = int(PARAMETRS_OBJ["gost-3410-12-512-paramSetA"]["q"], 16)
 
-    xp = {
-        "16": PARAMETRS_OBJ["gost-3410-12-512-paramSetA"]["x"],
-        "10": int(PARAMETRS_OBJ["gost-3410-12-512-paramSetA"]["x"], 16)
-    }
+    xp = int(PARAMETRS_OBJ["gost-3410-12-512-paramSetA"]["x"], 16)
 
-    yp = {
-        "16": PARAMETRS_OBJ["gost-3410-12-512-paramSetA"]["y"],
-        "10": int(PARAMETRS_OBJ["gost-3410-12-512-paramSetA"]["y"], 16)
-    }
+    yp = int(PARAMETRS_OBJ["gost-3410-12-512-paramSetA"]["y"], 16)
+
+    # p = genPrime.genProst(1000000000)
+    # q = genPrime.genProst(1000000000)
+    # a = genPrime.genN(0, p)
+    # b = genPrime.genN(0, p)
+    #
+    # while (4 * (a**3) + 27 * (b**2)) % 2 == 0:
+    #     b = genPrime.genN(0, p)
+    # xp = 0
+    # yp = 0
+    # for xi in range(2, p):
+    #     yi = ((xi ** 3 + a * xi + b) % p) ** 0.5
+    #     if int(yi) == yi:
+    #         xp = xi
+    #         yp = int(yi)
+    #         break
 
     #### Формирование ключа подписи d
 
-    d = {
-        "16": 0,
-        "10": 0,
-    }
+
+    d = 0
 
     while True:
         current_time = str(datetime.datetime.now())
-        result = hash(current_time) % q["10"]
-        if (result > 0 and result < q["10"]):
-            d = {
-                "16": hex(result),
-                "10": result
-            }
+        result = hash(current_time) % q
+        if (result > 0 and result < q):
+            d = result
+
             break
 
     #### Формирвоание ключа проверки подписи
 
-    xq = {
-        "16": 0,
-        "10": 0,
-    }
-
-    yq = {
-        "16": 0,
-        "10": 0,
-    }
-
-    xq["10"], yq["10"] = ElipticFuncs.scalar_multiply(d["10"], [xp["10"], yp["10"]], p["10"], a["10"])
-    xq["16"] = hex(xq["10"])
-    yq["16"] = hex(yq["10"])
-
+    xq, yq = ElipticFuncs.scalar_multiply(d,[xp, yp], p, a)
     return p, a, b, q, xp, yp, d, xq, yq
