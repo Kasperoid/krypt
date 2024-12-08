@@ -31,6 +31,4 @@ def verif(message, r, s, q, p , xp, yp, a, xq, yq):
 
     R = xc_prov % q
 
-    print(R == r)
-
     return R == r
