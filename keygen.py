@@ -77,7 +77,7 @@ def keygen():
 
     while (4 * (a ** 3) + 27 * (b ** 2)) % p == 0:
         time.sleep(0.01)
-        b = math.floor(time.time() * 100000) % p
+        b = math.floor(time.time() * 10000) % p
 
     print('b=', b)
 
@@ -96,7 +96,7 @@ def keygen():
     print("q =", q)
 
     while True:
-        d = math.floor(time.time() * 100000) % q
+        d = math.floor(time.time() * 10000) % q
         if (d > 2 and d < q):
             break
 
