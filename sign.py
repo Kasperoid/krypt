@@ -21,7 +21,7 @@ def sign(d, message, q, xp, yp, a, p):
         if (result > 0 and result < q):
             k = result
 
-            xc, yc = ElipticFuncs.scalar_multiply(k, [xp, yp], p, a)
+            xc, yc = ElipticFuncs.elliptic_curve_multiply([xp, yp], k, a, p)
 
             r = xc % q
 

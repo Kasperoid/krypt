@@ -23,11 +23,13 @@ def verif(message, r, s, q, p , xp, yp, a, xq, yq):
 
     v = modInverse.mod_inverse(e_prov, q) % q
 
-    z1= (s * v) % q
+    z1 = (s * v) % q
 
     z2 = (-r * v) % q
 
-    xc_prov, yc_prov = ElipticFuncs.add_points(ElipticFuncs.scalar_multiply(z1, [xp, yp], p, a), ElipticFuncs.scalar_multiply(z2, [xq, yq], p, a), p, a)
+    # xc_prov, yc_prov = ElipticFuncs.add_points(ElipticFuncs.scalar_multiply(z1, [xp, yp], p, a), ElipticFuncs.scalar_multiply(z2, [xq, yq], p, a), p, a)
+
+    xc_prov, yc_prov = ElipticFuncs.elliptic_curve_add(ElipticFuncs.elliptic_curve_multiply([xp, yp], z1, a, p), ElipticFuncs.elliptic_curve_multiply([xq, yq], z2, a, p), a, p)
 
     R = xc_prov % q
 

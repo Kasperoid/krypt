@@ -2,6 +2,8 @@ import datetime
 import ElipticFuncs
 import genPrime
 import test
+import time
+import math
 # Формирование параметров схемы цифровой подписи
 
 def keygen():
@@ -45,22 +47,93 @@ def keygen():
     #         yp = int(yi)
     #         break
 
-    p, q, a, b, xp, yp = test.generate_parameters()
-
-    #### Формирование ключа подписи d
-
-
+    p = 0
+    xp = 0
+    a = 0
+    b = 0
+    yp = 0
+    q = 0
     d = 0
+    xq = 0
+    yq = 0
 
     while True:
-        current_time = str(datetime.datetime.now())
-        result = hash(current_time) % q
-        if (result > 0 and result < q):
-            d = result
+        p = genPrime.genPrime()
+        if (p % 4 == 3):
+            break
+    print('p=', p)
+    while True:
+        a = math.floor(time.time() * 10000) % p
+        if (a != 0 and a < p):
+            break
+    print('a=', a)
 
+    time.sleep(0.1)
+
+    while True:
+        b = math.floor(time.time() * 10000) % p
+        if (b != 0 and b < p):
             break
 
-    #### Формирвоание ключа проверки подписи
+    while (4 * (a ** 3) + 27 * (b ** 2)) % p == 0:
+        time.sleep(0.01)
+        b = math.floor(time.time() * 100000) % p
 
-    xq, yq = ElipticFuncs.scalar_multiply(d,[xp, yp], p, a)
+    print('b=', b)
+
+    for x1 in range(2, p):
+        y1 = ((x1 ** 3 + a * x1 + b) % p) ** 0.5
+        if int(y1) == y1:
+            xp = x1
+            yp = int(y1)
+            break
+
+    print('x=', xp, "y=", yp, (yp**2) % p == (xp**3 + a*xp + b) % p)
+
+    for q in range(int(p + 1 - 2 * (p ** 0.5)), int(p + 1 + 2 * (p ** 0.5))):
+        if ElipticFuncs.elliptic_curve_multiply([xp, yp], q, a, p) == None:
+            break
+    print("q =", q)
+
+    while True:
+        d = math.floor(time.time() * 100000) % q
+        if (d > 2 and d < q):
+            break
+
+    print('d=', d)
+
+    xq, yq = ElipticFuncs.elliptic_curve_multiply([xp, yp], d, a, p)
+
+    print('xq=', xq, 'yq=', yq)
+
     return p, a, b, q, xp, yp, d, xq, yq
+
+
+
+
+
+
+
+
+
+
+
+
+
+    #### Формирование ключа подписи d
+    #
+    #
+    # d = 0
+    #
+    # while True:
+    #     current_time = str(datetime.datetime.now())
+    #     result = hash(current_time) % q
+    #     if (result > 0 and result < q):
+    #         d = result
+    #
+    #         break
+    #
+    # #### Формирвоание ключа проверки подписи
+    #
+    # xq, yq = ElipticFuncs.scalar_multiply(d,[xp, yp], p, a)
+    # return p, a, b, q, xp, yp, d, xq, yq

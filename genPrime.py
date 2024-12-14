@@ -1,115 +1,109 @@
-import time
 import math
-
-def isqrt(x):
-    n = int(x)
-    r = 1 << ((n.bit_length() + 1) >> 1)
-    while True:
-        newr = (r + n // r) >> 1  # next estimate by Newton-Raphson
-        if newr >= r:
-            return r
-        r = newr
+import time
 
 
-def is_prime(n):
-    n = int(n)
+def trial_division_primality(n):
+    """
+    Тест пробных делений для проверки простоты числа
+    """
+    # Обработка малых чисел
     if n <= 1:
         return False
-    if n == 2:
+    if n <= 3:
         return True
-    if n % 2 == 0:
+
+    # Быстрые проверки
+    if n % 2 == 0 or n % 3 == 0:
         return False
-    for i in range(3, int(n ** 0.5) + 1, 2):
-        if n % i == 0:
+
+    # Проверка делителей до квадратного корня из n
+    i = 5
+    while i * i <= n:
+        if n % i == 0 or n % (i + 2) == 0:
             return False
+        i += 6
+
     return True
 
 
-def is_PrimeMR(n):
-    n = int(n)
+def fermat_primality_test(n, k=10):
+    """
+    Тест Ферма для проверки простоты числа
 
-    if n == 0 or n == 1 or n == 4 or n == 6 or n == 8 or n == 9:
+    Параметры:
+    n - число для проверки
+    k - количество итераций теста (чем больше, тем точнее)
+    """
+    # Обработка малых чисел
+    if n <= 1 or n == 4:
         return False
-
-    if n == 2 or n == 3 or n == 5 or n == 7:
-        return True
-    s = 0
-    d = n - 1
-    while d % 2 == 0:
-        d >>= 1
-        s += 1
-    assert (2 ** s * d == n - 1)
-
-    def trial_composite(a):
-        if pow(a, d, n) == 1:
-            return False
-        for i in range(s):
-            if pow(a, 2 ** i * d, n) == n - 1:
-                return False
+    if n <= 3:
         return True
 
-    for i in range(8):
-        a = genN(2, n)
-        if trial_composite(a):
+    # Тест Ферма
+    for _ in range(k):
+        # Выбираем случайное число a от 2 до n-2
+        a = math.floor(time.time() * 100000) % (n-2)
+
+        # Проверяем условие Ферма: a^(n-1) ≡ 1 (mod n)
+        if pow(a, n - 1, n) != 1:
             return False
 
     return True
 
-def genProst(n):
-    pr = int(time.time() * 1000000) % n
-    while not is_prime(pr):
-        pr = int(time.time() * 1000000) % n
-    return pr
+def genPrime():
+    def sieve_of_eratosthenes_bit(n):
+        sieve = bytearray((n // 8) + 1)
 
-def genProst256():
-    pr = genBit(255)
-    while is_PrimeMR(pr) != True:
-        pr = genBit(255)
-    return pr
-def genProst508_512():
-    pr = genBit(genN(508, 511))
-    while is_PrimeMR(pr) != True:
-        pr = genBit(genN(508, 511))
-    return pr
+        def is_prime(num):
+            return not (sieve[num // 8] & (1 << (num % 8)))
 
-def gРеnN(a, b):
-    n = int(time.time() * 1000000) % b
-    while n < a:
-        n = int(time.time() * 1000000) % b
-    return n
+        def mark_composite(num):
+            sieve[num // 8] |= 1 << (num % 8)
 
-def gРеnBit(n):
-    b = []
-    for i in range(n ):
-        b.append(genN(0, 2))
-        time.sleep(0.000003)
-    return int('0b' + ''.join(str(x) for x in b), 2)
+        mark_composite(0)
+        mark_composite(1)
 
+        for i in range(2, int(n ** 0.5) + 1):
+            if is_prime(i):
+                for j in range(i * i, n + 1, i):
+                    mark_composite(j)
 
+        return [num for num in range(2, n + 1) if is_prime(num)]
 
+    def divide_primes_by_mod_3():
+        set1 = []
+        set2 = []
 
+        for prime in primes:
+            if prime == 3:
+                continue
 
+            remainder = prime % 3
 
+            if remainder == 1:
+                set1.append(prime)
+            elif remainder == 2:
+                set2.append(prime)
 
+        return set1, set2
 
+    def create_prost():
+        while True:
+            index_1 = math.floor(time.time() * 100000) % len(mnoj1)
+            time.sleep(0.01)
+            index_2 = math.floor(time.time() * 100000) % len(mnoj1)
 
+            prime = mnoj1[index_1] * mnoj2[index_2] * 2 + 1
 
-
-
-
-
-
-
-
-
-
-
+            if trial_division_primality(prime) and fermat_primality_test(prime):
+                return prime
 
 
+    primes = sieve_of_eratosthenes_bit(10000)
+    mnoj1, mnoj2 = divide_primes_by_mod_3()
 
-
-
-
+    return create_prost()
 
 
 
@@ -117,13 +111,74 @@ def gРеnBit(n):
 
 
 
-#region г…¤
-from random import randrange as genN # noinspection
-from random import getrandbits as genBit # noinspection
-#endregion # noinspection
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#region г…¤ # noqa
+from random import randrange as genN # noqa
+from random import getrandbits as genBit # noqa
+#endregion # noqa
 
 
 
