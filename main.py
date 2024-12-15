@@ -1,26 +1,111 @@
+import existInverse
 import keygen
 import sign
 import verif
-
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox as mb
+import genPrime
 
+def win_check_primary(type):
+    def check_primary():
+        num = int(text_entry.get().strip())
+
+        if (type == "FERMA"):
+            if genPrime.fermat_primality_test(num) == True:
+                result_label.config(text='Простое')
+            else:
+                result_label.config(text='Не простое')
+        elif (type == "PROBA"):
+            if genPrime.trial_division_primality(num) == True:
+                result_label.config(text='Простое')
+            else:
+                result_label.config(text='Не простое')
+
+    # Создаем новое окно
+    new_window = tk.Toplevel(root)
+    new_window.title(f"Проверка")
+    new_window.geometry("500x200")
+
+    text_title = ""
+
+    if (type == "FERMA"):
+        text_title = 'Тест Ферма'
+    elif (type == "PROBA"):
+        text_title = "Метод пробных делений"
+
+    title_label = tk.Label(new_window,
+                           text=f"Проверка {text_title}",
+                           font=("Arial", 14, "bold"))
+    title_label.pack(pady=10)
+
+    # Создаем текстовое поле
+    text_entry = tk.Entry(new_window, width=30)
+    text_entry.pack(pady=20)
+
+    # Создаем кнопку для действия с текстовым полем
+    submit_button = tk.Button(new_window, text="Проверить",
+                               command=lambda: check_primary())
+
+    result_label = tk.Label(new_window,
+                            text="",
+                            font=("Arial", 12),
+                            wraplength=350)
+    result_label.pack(pady=10)
+    submit_button.pack()
+
+def winGenPrime():
+    def gentimer():
+        pr = genPrime.genPrime()
+        label0_1['text']=f"Простое число: {pr}"
+
+    Gen = tk.Toplevel(root)
+    Gen.title("Генерация простого числа")
+    Gen.geometry("320x90")
+
+    label0_1 = ttk.Label(Gen, text="Простое число: ", font="Arial 14")
+    label0_1.place(x=10, y=10)
+    btn = ttk.Button(Gen, text="Сгенерировать простое число", command=gentimer)
+    btn.place(x=10, y=50)
+
+def winAbout():
+    Gen = tk.Toplevel(root)
+    Gen.title("Создатель")
+    Gen.geometry("320x90")
+
+    label0_1 = ttk.Label(Gen, text="БИСО-01-21 УСТИНОВ И.А.", font="Arial 14")
+    label0_1.place(x=10, y=10)
 
 class SenderWindow:
-    def __init__(self, receiver=None):
+    def __init__(self, master):
+        self.master = master
+        master.title("Пользователь 1")
+        master.geometry("450x600")
+        self.zakr_key = 0
+        self.hash_message = ''
+        self.podpis_r = 0
+        self.podpis_s = 0
 
-        self.window = tk.Tk()
-        self.window.title("Отправитель")
-        self.window.geometry("400x600")
-        self.receiver = receiver
+        main_menu = tk.Menu(master)
+        master.config(menu=main_menu)
+
+        is_prime_menu = tk.Menu(main_menu, tearoff=0)
+        main_menu.add_cascade(label="Проверка на простоту", menu=is_prime_menu)
+        is_prime_menu.add_command(label="Метод пробных делений", command=lambda: win_check_primary("PROBA"))
+        is_prime_menu.add_command(label="Теорема Ферма", command=lambda: win_check_primary("FERMA"))
+
+        main_menu.add_cascade(label="Сгенерировать простое", command=winGenPrime)
+
+        main_menu.add_cascade(label="Создатель", command=winAbout)
+
+        main_menu.add_cascade(label="Выход", command=root.quit)
 
         # Создаем фрейм для коэффициентов
-        coef_frame = ttk.LabelFrame(self.window, text="Коэффициенты")
+        coef_frame = ttk.LabelFrame(master, text="Коэффициенты")
         coef_frame.pack(padx=10, pady=5, fill="x")
 
         # Создаем метки и поля для коэффициентов
-        coefficients = ['p', 'a - коэф. элипт. кривой', 'b - коэф. элипт. кривой', 'q - порядок подгруппы точек', 'd - закрытый ключ', 'Q - открытый ключ', 'P - точка эллиптической кривой порядка q', '(r, s) - подпись']
+        coefficients = ['p', 'a - коэф. элипт. кривой', 'b - коэф. элипт. кривой', 'q - порядок подгруппы точек', 'Q - открытый ключ', 'P - точка эллиптической кривой порядка q', 'Подпись']
         self.coef_entries = {}
 
         for coef in coefficients:
@@ -33,20 +118,29 @@ class SenderWindow:
             self.coef_entries[coef] = entry
 
         # Создаем кнопки
-        buttons_frame = ttk.Frame(self.window)
+        buttons_frame = ttk.Frame(master)
         buttons_frame.pack(padx=10, pady=5, fill="x")
 
         ttk.Button(buttons_frame, text="Сформировать ключи",
                    command=self.generate_keys).pack(fill="x", pady=2)
-        ttk.Button(buttons_frame, text="Подписать",
-                   command=self.sign).pack(fill="x", pady=2)
-        ttk.Button(buttons_frame, text="Отправить",
-                   command=self.send).pack(fill="x", pady=2)
 
         # Создаем текстовое поле
-        ttk.Label(self.window, text="Сообщение:").pack(padx=10)
-        self.message_text = tk.Text(self.window, height=5)
+        ttk.Label(master, text="Сообщение:").pack(padx=10)
+        self.message_text = tk.Text(master, height=5)
         self.message_text.pack(padx=10, pady=5, fill="x")
+
+        ttk.Button(master, text="Подписать",
+                   command=self.sign).pack(fill="x", padx=10, pady=5)
+
+        ttk.Button(master, text="Отправить",
+                   command=self.send).pack(fill="x", padx=10, pady=5)
+
+        ttk.Button(master, text="Проверить",
+                   command=self.verify).pack(padx=10, pady=5, fill="x")
+
+        ttk.Label(master, text="Хеш-сумма сообщения:").pack(padx=10)
+        self.hash_text = tk.Text(master, height=5)
+        self.hash_text.pack(padx=10, pady=5, fill="x")
 
     def update_coefficient(self, coef_name, value):
         """Обновляет значение в поле ввода коэффициента"""
@@ -56,60 +150,147 @@ class SenderWindow:
             # Вставляем новое значение
             self.coef_entries[coef_name].insert(0, str(value))
 
+    def update_received_data(self, data, message, r, s):
+        # Обновляем значения коэффициентов
+        for key, value in data.items():
+            if key in self.coef_entries:
+                self.coef_entries[key].delete(0, tk.END)
+                self.coef_entries[key].insert(0, value)
+
+        # Обновляем сообщение
+        self.message_text.delete("1.0", tk.END)
+        self.message_text.insert("1.0", message)
+
+        self.podpis_r = r
+        self.podpis_s = s
+
     def generate_keys(self):
         p, a, b, q, xp, yp, d, xq, yq = keygen.keygen()
         self.update_coefficient('p', p)
         self.update_coefficient('a - коэф. элипт. кривой', a)
         self.update_coefficient('b - коэф. элипт. кривой', b)
         self.update_coefficient('q - порядок подгруппы точек', q)
-        self.update_coefficient('d - закрытый ключ', d)
         self.update_coefficient('Q - открытый ключ', (xq, yq))
         self.update_coefficient('P - точка эллиптической кривой порядка q', (xp, yp))
+        self.zakr_key = d
 
     def sign(self):
         message = self.message_text.get("1.0", tk.END).strip()
+        self.hash_text.delete("1.0", tk.END)
         if message == '':
             mb.showerror("Ошибка",
                          "Вы ввели пустое сообщение")
         else:
-            d = int(self.coef_entries['d - закрытый ключ'].get())
+            d = self.zakr_key
             q = int(self.coef_entries['q - порядок подгруппы точек'].get())
             xp = int(self.coef_entries['P - точка эллиптической кривой порядка q'].get().rstrip(')').lstrip('(').split(',')[0])
             yp = int(self.coef_entries['P - точка эллиптической кривой порядка q'].get().rstrip(')').lstrip('(').split(',')[1])
             a = int(self.coef_entries['a - коэф. элипт. кривой'].get())
             p = int(self.coef_entries['p'].get())
 
-            r, s = sign.sign(d, message, q, xp, yp, a, p)
+            for i in range(100):
+                check = existInverse.existInverse(message, q, p, xp, yp, a)
 
-            self.update_coefficient('(r, s) - подпись', (r, s))
+                if check == False:
+                    message += " "
+                else:
+                    self.message_text.delete(1.0, tk.END)
+                    self.message_text.insert(1.0, message)
+                    break
+
+            r, s, self.hash_message = sign.sign(d, message, q, xp, yp, a, p)
+
+            self.podpis_r = r
+
+            self.podpis_s = s
+
+            concatRS = int(str(r) + str(s))
+
+            self.hash_text.insert("1.0", self.hash_message)
+
+            self.update_coefficient('Подпись', concatRS)
+
+    def verify(self):
+        message = self.message_text.get("1.0", tk.END).rstrip('\n')
+        while message.endswith('\n'):
+            message = message.rstrip('\n')
+        r = self.podpis_r
+        s = self.podpis_s
+        q = int(self.coef_entries['q - порядок подгруппы точек'].get())
+        xp = int(self.coef_entries['P - точка эллиптической кривой порядка q'].get().rstrip(')').lstrip('(').split(',')[0])
+        yp = int(self.coef_entries['P - точка эллиптической кривой порядка q'].get().rstrip(')').lstrip('(').split(',')[1])
+        a = int(self.coef_entries['a - коэф. элипт. кривой'].get())
+        p = int(self.coef_entries['p'].get())
+        xq = int(self.coef_entries['Q - открытый ключ'].get().rstrip(')').lstrip('(').split(',')[0])
+        yq = int(self.coef_entries['Q - открытый ключ'].get().rstrip(')').lstrip('(').split(',')[1])
+
+        isCheck, hash_text = verif.verif(message, r, s, q, p, xp, yp, a, xq, yq)
+
+        if isCheck:
+            mb.showinfo("Успех",
+                         "Подпись верна!")
+            self.hash_text.delete("1.0", tk.END)
+            self.hash_text.insert("1.0", hash_text)
+        else:
+            mb.showinfo("Не сошлось",
+                        "Подпись не верна!")
+
     def send(self):
-        data = {
-            'p': self.coef_entries['p'].get(),
-            'a - коэф. элипт. кривой': self.coef_entries['a - коэф. элипт. кривой'].get(),
-            'b - коэф. элипт. кривой': self.coef_entries['b - коэф. элипт. кривой'].get(),
-            'q - порядок подгруппы точек': self.coef_entries['q - порядок подгруппы точек'].get(),
-            'Q - открытый ключ': self.coef_entries['Q - открытый ключ'].get(),
-            'P - точка эллиптической кривой порядка q': self.coef_entries['P - точка эллиптической кривой порядка q'].get(),
-            '(r, s) - подпись': self.coef_entries['(r, s) - подпись'].get()
-        }
         message = self.message_text.get("1.0", tk.END).strip()
+        if message == '':
+            mb.showerror("Ошибка",
+                         "Вы ввели пустое сообщение")
+        else:
+            data = {
+                'p': self.coef_entries['p'].get(),
+                'a - коэф. элипт. кривой': self.coef_entries['a - коэф. элипт. кривой'].get(),
+                'b - коэф. элипт. кривой': self.coef_entries['b - коэф. элипт. кривой'].get(),
+                'q - порядок подгруппы точек': self.coef_entries['q - порядок подгруппы точек'].get(),
+                'Q - открытый ключ': self.coef_entries['Q - открытый ключ'].get(),
+                'P - точка эллиптической кривой порядка q': self.coef_entries['P - точка эллиптической кривой порядка q'].get(),
+                'Подпись': self.coef_entries['Подпись'].get()
+            }
+            message = self.message_text.get("1.0", tk.END)
 
-        # Передаем данные получателю
-        self.receiver.update_received_data(data, message)
+            r = self.podpis_r
+            s = self.podpis_s
+
+            # Передаем данные получателю
+            receiver.update_received_data(data, message, r, s)
+
+            self.message_text.delete("1.0", tk.END)
 
 
 class ReceiverWindow:
-    def __init__(self):
-        self.window = tk.Tk()
-        self.window.title("Получатель")
-        self.window.geometry("400x600")
+    def __init__(self, master):
+        self.master = master
+        master.title("Пользователь 2")
+        master.geometry("450x600")
+        self.hash_sum = ''
+        self.podp_r = 0
+        self.podp_s = 0
+        self.zakr_key = 0
+
+        main_menu = tk.Menu(master)
+        master.config(menu=main_menu)
+
+        file_menu = tk.Menu(main_menu, tearoff=0)
+        main_menu.add_cascade(label="Проверка на простоту", menu=file_menu)
+        file_menu.add_command(label="Метод пробных делений", command=lambda: win_check_primary("PROBA"))
+        file_menu.add_command(label="Теорема Ферма", command=lambda: win_check_primary("FERMA"))
+
+        main_menu.add_cascade(label="Сгенерировать простое", command=winGenPrime)
+
+        main_menu.add_cascade(label="Создатель", command=winAbout)
+
+        main_menu.add_cascade(label="Выход", command=root.quit)
 
         # Создаем фрейм для коэффициентов
-        coef_frame = ttk.LabelFrame(self.window, text="Коэффициенты")
+        coef_frame = ttk.LabelFrame(master, text="Коэффициенты")
         coef_frame.pack(padx=10, pady=5, fill="x")
 
         # Создаем метки и поля для коэффициентов
-        coefficients = ['p', 'a - коэф. элипт. кривой', 'b - коэф. элипт. кривой', 'q - порядок подгруппы точек', 'Q - открытый ключ', 'P - точка эллиптической кривой порядка q', '(r, s) - подпись']
+        coefficients = ['p', 'a - коэф. элипт. кривой', 'b - коэф. элипт. кривой', 'q - порядок подгруппы точек', 'Q - открытый ключ', 'P - точка эллиптической кривой порядка q', 'Подпись']
         self.coef_entries = {}
 
         for coef in coefficients:
@@ -122,15 +303,85 @@ class ReceiverWindow:
             self.coef_entries[coef] = entry
 
         # Создаем кнопку проверки
-        ttk.Button(self.window, text="Проверить",
-                   command=self.verify).pack(padx=10, pady=5, fill="x")
+        buttons_frame = ttk.Frame(master)
+        buttons_frame.pack(padx=10, pady=5, fill="x")
+
+        ttk.Button(buttons_frame, text="Сформировать ключи",
+                   command=self.generate_keys).pack(fill="x", pady=2)
 
         # Создаем текстовое поле
-        ttk.Label(self.window, text="Сообщение:").pack(padx=10)
-        self.message_text = tk.Text(self.window, height=5)
+        ttk.Label(master, text="Сообщение:").pack(padx=10)
+        self.message_text = tk.Text(master, height=5)
         self.message_text.pack(padx=10, pady=5, fill="x")
 
-    def update_received_data(self, data, message):
+        ttk.Button(master, text="Подписать",
+                   command=self.sign).pack(fill="x", padx=10, pady=5)
+
+        ttk.Button(master, text="Отправить",
+                   command=self.send).pack(fill="x", padx=10, pady=5)
+
+        ttk.Button(master, text="Проверить",
+                   command=self.verify).pack(padx=10, pady=5, fill="x")
+
+        ttk.Label(master, text="Хеш-сумма сообщения:").pack(padx=10)
+        self.hash_text = tk.Text(master, height=5)
+        self.hash_text.pack(padx=10, pady=5, fill="x")
+
+    def update_coefficient(self, coef_name, value):
+        """Обновляет значение в поле ввода коэффициента"""
+        if coef_name in self.coef_entries:
+            # Очищаем текущее значение
+            self.coef_entries[coef_name].delete(0, tk.END)
+            # Вставляем новое значение
+            self.coef_entries[coef_name].insert(0, str(value))
+
+    def sign(self):
+        message = self.message_text.get("1.0", tk.END).strip()
+        self.hash_text.delete("1.0", tk.END)
+        if message == '':
+            mb.showerror("Ошибка",
+                         "Вы ввели пустое сообщение")
+        else:
+            d = self.zakr_key
+            q = int(self.coef_entries['q - порядок подгруппы точек'].get())
+            xp = int(self.coef_entries['P - точка эллиптической кривой порядка q'].get().rstrip(')').lstrip('(').split(',')[0])
+            yp = int(self.coef_entries['P - точка эллиптической кривой порядка q'].get().rstrip(')').lstrip('(').split(',')[1])
+            a = int(self.coef_entries['a - коэф. элипт. кривой'].get())
+            p = int(self.coef_entries['p'].get())
+
+            for i in range(100):
+                check = existInverse.existInverse(message, q, p, xp, yp, a)
+
+                if check == False:
+                    message += " "
+                else:
+                    self.message_text.delete(1.0, tk.END)
+                    self.message_text.insert(1.0, message)
+                    break
+
+            r, s, self.hash_sum = sign.sign(d, message, q, xp, yp, a, p)
+
+            self.podp_r = r
+
+            self.podp_s = s
+
+            concatRS = int(str(r) + str(s))
+
+            self.hash_text.insert("1.0", self.hash_sum)
+
+            self.update_coefficient('Подпись', concatRS)
+
+    def generate_keys(self):
+        p, a, b, q, xp, yp, d, xq, yq = keygen.keygen()
+        self.update_coefficient('p', p)
+        self.update_coefficient('a - коэф. элипт. кривой', a)
+        self.update_coefficient('b - коэф. элипт. кривой', b)
+        self.update_coefficient('q - порядок подгруппы точек', q)
+        self.update_coefficient('Q - открытый ключ', (xq, yq))
+        self.update_coefficient('P - точка эллиптической кривой порядка q', (xp, yp))
+        self.zakr_key = d
+
+    def update_received_data(self, data, message, r, s):
         # Обновляем значения коэффициентов
         for key, value in data.items():
             if key in self.coef_entries:
@@ -141,10 +392,15 @@ class ReceiverWindow:
         self.message_text.delete("1.0", tk.END)
         self.message_text.insert("1.0", message)
 
+        self.podp_r = r
+        self.podp_s = s
+
     def verify(self):
-        message = self.message_text.get("1.0", tk.END).strip()
-        r = int(self.coef_entries['(r, s) - подпись'].get().rstrip(')').lstrip('(').split(',')[0])
-        s = int(self.coef_entries['(r, s) - подпись'].get().rstrip(')').lstrip('(').split(',')[1])
+        message = self.message_text.get("1.0", tk.END).rstrip('\n')
+        while message.endswith('\n'):
+            message = message.rstrip('\n')
+        r = self.podp_r
+        s = self.podp_s
         q = int(self.coef_entries['q - порядок подгруппы точек'].get())
         xp = int(self.coef_entries['P - точка эллиптической кривой порядка q'].get().rstrip(')').lstrip('(').split(',')[0])
         yp = int(self.coef_entries['P - точка эллиптической кривой порядка q'].get().rstrip(')').lstrip('(').split(',')[1])
@@ -153,19 +409,48 @@ class ReceiverWindow:
         xq = int(self.coef_entries['Q - открытый ключ'].get().rstrip(')').lstrip('(').split(',')[0])
         yq = int(self.coef_entries['Q - открытый ключ'].get().rstrip(')').lstrip('(').split(',')[1])
 
-        if verif.verif(message, r, s, q, p, xp, yp, a, xq, yq):
+        isCheck, hash_text = verif.verif(message, r, s, q, p, xp, yp, a, xq, yq)
+
+        if isCheck:
             mb.showinfo("Успех",
                          "Подпись верна!")
+            self.hash_text.delete("1.0", tk.END)
+            self.hash_text.insert("1.0", hash_text)
         else:
             mb.showinfo("Не сошлось",
                         "Подпись не верна!")
 
-def main():
-    receiver = ReceiverWindow()
-    sender = SenderWindow(receiver)
+    def send(self):
+        message = self.message_text.get("1.0", tk.END).strip()
+        if message == '':
+            mb.showerror("Ошибка",
+                         "Вы ввели пустое сообщение")
+        else:
+            message = self.message_text.get("1.0", tk.END)
+            data = {
+                'p': self.coef_entries['p'].get(),
+                'a - коэф. элипт. кривой': self.coef_entries['a - коэф. элипт. кривой'].get(),
+                'b - коэф. элипт. кривой': self.coef_entries['b - коэф. элипт. кривой'].get(),
+                'q - порядок подгруппы точек': self.coef_entries['q - порядок подгруппы точек'].get(),
+                'Q - открытый ключ': self.coef_entries['Q - открытый ключ'].get(),
+                'P - точка эллиптической кривой порядка q': self.coef_entries['P - точка эллиптической кривой порядка q'].get(),
+                'Подпись': self.coef_entries['Подпись'].get()
+            }
 
-    sender.window.mainloop()
-    receiver.window.mainloop()
+            r = self.podp_r
+            s = self.podp_s
 
-if __name__ == "__main__":
-    main()
+            # Передаем данные получателю
+            sender.update_received_data(data, message, r, s)
+
+            self.message_text.delete("1.0", tk.END)
+
+# Создание основного окна
+root = tk.Tk()
+root.withdraw()  # Скрываем основное окно
+
+receiver = ReceiverWindow(tk.Toplevel(root))
+sender = SenderWindow(tk.Toplevel(root))
+
+# Запуск главного цикла
+root.mainloop()

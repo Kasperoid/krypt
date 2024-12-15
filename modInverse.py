@@ -15,7 +15,7 @@ def mod_inverse(e, n):  # Нахождение значения из разря�
     gcd, x, _ = extended_gcd(e, n)
 
     if gcd != 1:
-        raise ValueError("Мультипликативно обратное значение не существует")
+        return False
 
     # Приводим результат к положительному значению по модулю n
     return x % n

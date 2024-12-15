@@ -1,7 +1,6 @@
 import GostHash
-import ElipticFuncs
 import modInverse
-def verif(message, r, s, q, p , xp, yp, a, xq, yq):
+def existInverse(message, q, p , xp, yp, a):
     ####### Проверка цифровой подписи
 
     e_prov = 0
@@ -23,12 +22,4 @@ def verif(message, r, s, q, p , xp, yp, a, xq, yq):
 
     v = modInverse.mod_inverse(e_prov, q) % q
 
-    z1 = (s * v) % q
-
-    z2 = (-r * v) % q
-
-    xc_prov, yc_prov = ElipticFuncs.elliptic_curve_add(ElipticFuncs.elliptic_curve_multiply([xp, yp], z1, a, p), ElipticFuncs.elliptic_curve_multiply([xq, yq], z2, a, p), a, p)
-
-    R = xc_prov % q
-
-    return (R == r), h_prov
+    return v
