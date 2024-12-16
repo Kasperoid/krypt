@@ -55,18 +55,81 @@ def win_check_primary(type):
     submit_button.pack()
 
 def winGenPrime():
-    def gentimer():
-        pr = genPrime.genPrime()
-        label0_1['text']=f"Простое число: {pr}"
+    def gennum():
+        pr = genPrime.genRandomNum()
+        pr1 = genPrime.genPrime()
+        entry1.insert(0, pr)
+        entry2.insert(0, pr1)
+
+    def isPrimary():
+        pr = int(entry1.get().strip())
+        if (genPrime.trial_division_primality(pr)):
+            label1_1['text'] = 'Простое'
+        else:
+            label1_1['text'] = 'Не простое'
+
+        if (genPrime.fermat_primality_test(pr)):
+            label2_1['text'] = 'Простое'
+        else:
+            label2_1['text'] = 'Не простое'
+
+        pr1 = int(entry2.get().strip())
+
+        if (genPrime.trial_division_primality(pr1)):
+            label11_1['text'] = 'Простое'
+        else:
+            label11_1['text'] = 'Не простое'
+
+        if (genPrime.fermat_primality_test(pr1)):
+            label22_1['text'] = 'Простое'
+        else:
+            label22_1['text'] = 'Не простое'
+
+    pr = 0
+    pr1 = 0
 
     Gen = tk.Toplevel(root)
-    Gen.title("Генерация простого числа")
-    Gen.geometry("320x90")
+    Gen.title("Генерация")
+    Gen.geometry("400x600")
 
-    label0_1 = ttk.Label(Gen, text="Простое число: ", font="Arial 14")
-    label0_1.place(x=10, y=10)
-    btn = ttk.Button(Gen, text="Сгенерировать простое число", command=gentimer)
-    btn.place(x=10, y=50)
+    button1 = tk.Button(Gen, text="Сгенерировать числа",
+                             command=gennum)
+    button1.pack(pady=10)
+
+    # Первое текстовое поле
+    entry1 = tk.Entry(Gen, width=40)
+    entry1.pack(pady=10)
+
+    label1 = tk.Label(Gen, text="Проверка по теореме Ферма")
+    label1.pack(pady=10)
+
+    label1_1 = tk.Label(Gen, text="Результат")
+    label1_1.pack(pady=10)
+
+    label2 = tk.Label(Gen, text="Проверка по методу пробных делений")
+    label2.pack(pady=10)
+
+    label2_1 = tk.Label(Gen, text="Результат")
+    label2_1.pack(pady=10)
+
+    entry2 = tk.Entry(Gen, width=40)
+    entry2.pack(pady=10)
+
+    label11 = tk.Label(Gen, text="Проверка по теореме Ферма")
+    label11.pack(pady=10)
+
+    label11_1 = tk.Label(Gen, text="Результат")
+    label11_1.pack(pady=10)
+
+    label22 = tk.Label(Gen, text="Проверка по методу пробных делений")
+    label22.pack(pady=10)
+
+    label22_1 = tk.Label(Gen, text="Результат")
+    label22_1.pack(pady=10)
+
+    button2 = tk.Button(Gen, text="Проверить",
+                        command=isPrimary)
+    button2.pack(pady=10)
 
 def winAbout():
     Gen = tk.Toplevel(root)
@@ -85,6 +148,8 @@ class SenderWindow:
         self.hash_message = ''
         self.podpis_r = 0
         self.podpis_s = 0
+        self.hashPoluch = 0
+        self.messagePoluch = ''
 
         main_menu = tk.Menu(master)
         master.config(menu=main_menu)
@@ -94,7 +159,7 @@ class SenderWindow:
         is_prime_menu.add_command(label="Метод пробных делений", command=lambda: win_check_primary("PROBA"))
         is_prime_menu.add_command(label="Теорема Ферма", command=lambda: win_check_primary("FERMA"))
 
-        main_menu.add_cascade(label="Сгенерировать простое", command=winGenPrime)
+        main_menu.add_cascade(label="Сгенерировать числа", command=winGenPrime)
 
         main_menu.add_cascade(label="Создатель", command=winAbout)
 
@@ -150,7 +215,7 @@ class SenderWindow:
             # Вставляем новое значение
             self.coef_entries[coef_name].insert(0, str(value))
 
-    def update_received_data(self, data, message, r, s):
+    def update_received_data(self, data, message, r, s, hash):
         # Обновляем значения коэффициентов
         for key, value in data.items():
             if key in self.coef_entries:
@@ -164,6 +229,10 @@ class SenderWindow:
         self.podpis_r = r
         self.podpis_s = s
 
+        self.messagePoluch = message
+
+        self.hashPoluch = hash
+
     def generate_keys(self):
         p, a, b, q, xp, yp, d, xq, yq = keygen.keygen()
         self.update_coefficient('p', p)
@@ -173,6 +242,9 @@ class SenderWindow:
         self.update_coefficient('Q - открытый ключ', (xq, yq))
         self.update_coefficient('P - точка эллиптической кривой порядка q', (xp, yp))
         self.zakr_key = d
+
+        mb.showinfo("Успех!",
+                     "Ключи сформированы")
 
     def sign(self):
         message = self.message_text.get("1.0", tk.END).strip()
@@ -210,6 +282,9 @@ class SenderWindow:
 
             self.update_coefficient('Подпись', concatRS)
 
+            mb.showinfo("Успех!",
+                        "Сообщение подписано!")
+
     def verify(self):
         message = self.message_text.get("1.0", tk.END).rstrip('\n')
         while message.endswith('\n'):
@@ -224,16 +299,28 @@ class SenderWindow:
         xq = int(self.coef_entries['Q - открытый ключ'].get().rstrip(')').lstrip('(').split(',')[0])
         yq = int(self.coef_entries['Q - открытый ключ'].get().rstrip(')').lstrip('(').split(',')[1])
 
-        isCheck, hash_text = verif.verif(message, r, s, q, p, xp, yp, a, xq, yq)
+        podpis = int(self.coef_entries['Подпись'].get().rstrip())
+        concatRS = int(str(r) + str(s))
 
-        if isCheck:
-            mb.showinfo("Успех",
-                         "Подпись верна!")
-            self.hash_text.delete("1.0", tk.END)
-            self.hash_text.insert("1.0", hash_text)
+        if (message.strip() != self.messagePoluch.strip()):
+            mb.showerror("Ошибка!", "Ошибка в сообщении!")
         else:
-            mb.showinfo("Не сошлось",
-                        "Подпись не верна!")
+            isCheck, hash_text = verif.verif(message, r, s, q, p, xp, yp, a, xq, yq)
+
+            if (self.hashPoluch.strip() != hash_text.strip()):
+                mb.showerror("Ошибка!", "Проблема в хеш-сумме!")
+            elif (podpis != concatRS):
+                mb.showerror("Ошибка!", "Проблема в подписи!")
+
+            else:
+                if isCheck:
+                    mb.showinfo("Успех",
+                                 "Подпись верна!")
+                    self.hash_text.delete("1.0", tk.END)
+                    self.hash_text.insert("1.0", hash_text)
+                else:
+                    mb.showinfo("Не сошлось",
+                                "Подпись не верна!")
 
     def send(self):
         message = self.message_text.get("1.0", tk.END).strip()
@@ -254,11 +341,15 @@ class SenderWindow:
 
             r = self.podpis_r
             s = self.podpis_s
+            hash = self.hash_text.get("1.0", tk.END)
 
             # Передаем данные получателю
-            receiver.update_received_data(data, message, r, s)
+            receiver.update_received_data(data, message, r, s, hash)
 
             self.message_text.delete("1.0", tk.END)
+
+            mb.showinfo("Успех!",
+                        "Передача прошла успешно!")
 
 
 class ReceiverWindow:
@@ -270,6 +361,8 @@ class ReceiverWindow:
         self.podp_r = 0
         self.podp_s = 0
         self.zakr_key = 0
+        self.hashPoluch = 0
+        self.messagePoluch = ''
 
         main_menu = tk.Menu(master)
         master.config(menu=main_menu)
@@ -279,7 +372,7 @@ class ReceiverWindow:
         file_menu.add_command(label="Метод пробных делений", command=lambda: win_check_primary("PROBA"))
         file_menu.add_command(label="Теорема Ферма", command=lambda: win_check_primary("FERMA"))
 
-        main_menu.add_cascade(label="Сгенерировать простое", command=winGenPrime)
+        main_menu.add_cascade(label="Сгенерировать числа", command=winGenPrime)
 
         main_menu.add_cascade(label="Создатель", command=winAbout)
 
@@ -371,6 +464,9 @@ class ReceiverWindow:
 
             self.update_coefficient('Подпись', concatRS)
 
+            mb.showinfo("Успех!",
+                        "Сообщение подписано!")
+
     def generate_keys(self):
         p, a, b, q, xp, yp, d, xq, yq = keygen.keygen()
         self.update_coefficient('p', p)
@@ -381,7 +477,10 @@ class ReceiverWindow:
         self.update_coefficient('P - точка эллиптической кривой порядка q', (xp, yp))
         self.zakr_key = d
 
-    def update_received_data(self, data, message, r, s):
+        mb.showinfo("Успех!",
+                    "Ключи сформированы")
+
+    def update_received_data(self, data, message, r, s, hash):
         # Обновляем значения коэффициентов
         for key, value in data.items():
             if key in self.coef_entries:
@@ -392,8 +491,12 @@ class ReceiverWindow:
         self.message_text.delete("1.0", tk.END)
         self.message_text.insert("1.0", message)
 
+        self.messagePoluch = message
+
         self.podp_r = r
         self.podp_s = s
+
+        self.hashPoluch = hash
 
     def verify(self):
         message = self.message_text.get("1.0", tk.END).rstrip('\n')
@@ -409,16 +512,34 @@ class ReceiverWindow:
         xq = int(self.coef_entries['Q - открытый ключ'].get().rstrip(')').lstrip('(').split(',')[0])
         yq = int(self.coef_entries['Q - открытый ключ'].get().rstrip(')').lstrip('(').split(',')[1])
 
-        isCheck, hash_text = verif.verif(message, r, s, q, p, xp, yp, a, xq, yq)
+        podpis = int(self.coef_entries['Подпись'].get().rstrip())
+        concatRS = int(str(r) + str(s))
 
-        if isCheck:
-            mb.showinfo("Успех",
-                         "Подпись верна!")
-            self.hash_text.delete("1.0", tk.END)
-            self.hash_text.insert("1.0", hash_text)
+
+        if (message.strip() != self.messagePoluch.strip()):
+            mb.showerror("Ошибка!",
+                         "Сообщения не совпадают!")
         else:
-            mb.showinfo("Не сошлось",
-                        "Подпись не верна!")
+
+            isCheck, hash_text = verif.verif(message, r, s, q, p, xp, yp, a, xq, yq)
+
+            if (self.hashPoluch.strip() != hash_text.strip()):
+                mb.showerror("Ошибка!",
+                            "Проблема в хеш-сумме!")
+                self.hash_text.insert("1.0", hash_text)
+
+            elif (podpis != concatRS):
+                mb.showerror("Ошибка!",
+                             "Проблема в подписи!!")
+            else:
+                if isCheck:
+                    mb.showinfo("Успех",
+                                 "Подпись верна!")
+                    self.hash_text.delete("1.0", tk.END)
+                    self.hash_text.insert("1.0", hash_text)
+                else:
+                    mb.showinfo("Не сошлось",
+                                "Подпись не верна!")
 
     def send(self):
         message = self.message_text.get("1.0", tk.END).strip()
@@ -440,10 +561,15 @@ class ReceiverWindow:
             r = self.podp_r
             s = self.podp_s
 
+            hash = self.hash_text.get("1.0", tk.END)
+
             # Передаем данные получателю
-            sender.update_received_data(data, message, r, s)
+            sender.update_received_data(data, message, r, s, hash)
 
             self.message_text.delete("1.0", tk.END)
+
+            mb.showinfo("Успех!",
+                        "Передача прошла успешно!")
 
 # Создание основного окна
 root = tk.Tk()

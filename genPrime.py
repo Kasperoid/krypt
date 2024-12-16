@@ -91,7 +91,7 @@ def genPrime():
         while True:
             index_1 = math.floor(time.time() * 100000) % len(mnoj1)
             time.sleep(0.01)
-            index_2 = math.floor(time.time() * 100000) % len(mnoj1)
+            index_2 = math.floor(time.time() * 100000) % len(mnoj2)
 
             prime = mnoj1[index_1] * mnoj2[index_2] * 2 + 1
 
@@ -99,113 +99,59 @@ def genPrime():
                 return prime
 
 
-    primes = sieve_of_eratosthenes_bit(10000)
+    primes = sieve_of_eratosthenes_bit(100000)
     mnoj1, mnoj2 = divide_primes_by_mod_3()
 
     return create_prost()
 
+def genRandomNum():
+    def sieve_of_eratosthenes_bit(n):
+        sieve = bytearray((n // 8) + 1)
 
+        def is_prime(num):
+            return not (sieve[num // 8] & (1 << (num % 8)))
 
+        def mark_composite(num):
+            sieve[num // 8] |= 1 << (num % 8)
 
+        mark_composite(0)
+        mark_composite(1)
 
+        for i in range(2, int(n ** 0.5) + 1):
+            if is_prime(i):
+                for j in range(i * i, n + 1, i):
+                    mark_composite(j)
 
+        return [num for num in range(2, n + 1) if is_prime(num)]
 
+    def divide_primes_by_mod_3():
+        set1 = []
+        set2 = []
 
+        for prime in primes:
+            if prime == 3:
+                continue
 
+            remainder = prime % 3
 
+            if remainder == 1:
+                set1.append(prime)
+            elif remainder == 2:
+                set2.append(prime)
 
+        return set1, set2
 
+    def create_prost():
+        index_1 = math.floor(time.time() * 100000) % len(mnoj1)
+        time.sleep(0.01)
+        index_2 = math.floor(time.time() * 100000) % len(mnoj2)
 
+        prime = mnoj1[index_1] * mnoj2[index_2] * 2 + 1
 
+        return prime
 
 
+    primes = sieve_of_eratosthenes_bit(100000)
+    mnoj1, mnoj2 = divide_primes_by_mod_3()
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#region г…¤ # noqa
-from random import randrange as genN # noqa
-from random import getrandbits as genBit # noqa
-#endregion # noqa
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    return create_prost()

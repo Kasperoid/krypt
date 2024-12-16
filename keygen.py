@@ -47,7 +47,7 @@ def keygen():
             break
 
     while True:
-        d = math.floor(time.time() * 10000) % q
+        d = math.floor(time.time() * 1000000) % q
         if (d > 2 and d < q):
             break
 

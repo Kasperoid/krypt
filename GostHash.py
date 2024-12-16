@@ -3,14 +3,8 @@ class entry:
 
     def __init__(self):
         pass
-
-
-
     def XOR (self, A, B):
         return [a^b for a, b in zip(A, B)]
-
-
-
     def plus (self, A, B):
 
         result = [0]*64
